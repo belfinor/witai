@@ -1,7 +1,7 @@
 package witai
 
 // @author  Mikhail Kirillov <mikkirillov@yandex.ru>
-// @version 1.000
+// @version 1.001
 // @date    2019-06-04
 // @comment api doc https://wit.ai/docs/http/20170307
 
@@ -31,20 +31,22 @@ type Response struct {
 }
 
 type Client struct {
-	token   string
-	Timeout time.Duration
+	token     string
+	Timeout   time.Duration
+	Threshold float64
 }
 
 func New(token string) *Client {
 
 	return &Client{
-		token:   token,
-		Timeout: time.Second * 10,
+		token:     token,
+		Timeout:   time.Second * 10,
+		Threshold: 0.5,
 	}
 
 }
 
-func (c *Client) Message(txt string) ([]*ConfVal, error) {
+func (c *Client) Message(txt string) ([]string, error) {
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -85,5 +87,14 @@ func (c *Client) Message(txt string) ([]*ConfVal, error) {
 		return nil, errors.New("wit.ai error: " + e.Error())
 	}
 
-	return r.Entities.Intent, nil
+	lst := make([]string, 0, len(r.Entities.Intent))
+
+	for _, v := range r.Entities.Intent {
+
+		if v.Conf >= c.Threshold {
+			lst = append(lst, v.Name)
+		}
+	}
+
+	return lst, nil
 }
