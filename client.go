@@ -1,14 +1,15 @@
 package witai
 
 // @author  Mikhail Kirillov <mikkirillov@yandex.ru>
-// @version 1.001
-// @date    2019-06-04
+// @version 1.002
+// @date    2019-06-05
 // @comment api doc https://wit.ai/docs/http/20170307
 
 import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -46,7 +47,16 @@ func New(token string) *Client {
 
 }
 
-func (c *Client) Message(txt string) ([]string, error) {
+func (c *Client) Message(txt string) (lst []string, e error) {
+
+	defer func() {
+
+		if r := recover(); r != nil {
+			lst = nil
+			e = errors.New(fmt.Sprint(r))
+		}
+
+	}()
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -87,7 +97,7 @@ func (c *Client) Message(txt string) ([]string, error) {
 		return nil, errors.New("wit.ai error: " + e.Error())
 	}
 
-	lst := make([]string, 0, len(r.Entities.Intent))
+	lst = make([]string, 0, len(r.Entities.Intent))
 
 	for _, v := range r.Entities.Intent {
 
