@@ -1,8 +1,8 @@
 package witai
 
 // @author  Mikhail Kirillov <mikkirillov@yandex.ru>
-// @version 1.002
-// @date    2019-06-05
+// @version 1.003
+// @date    2019-06-11
 // @comment api doc https://wit.ai/docs/http/20170307
 
 import (
@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -47,6 +48,23 @@ func New(token string) *Client {
 
 }
 
+func (c *Client) prepareMessage(txt string) string {
+
+	builder := strings.Builder{}
+	i := 0
+
+	for _, rune := range txt {
+		builder.WriteRune(rune)
+		i++
+
+		if i >= 260 {
+			builder.WriteString("...")
+			break
+		}
+	}
+	return builder.String()
+}
+
 func (c *Client) Message(txt string) (lst []string, e error) {
 
 	defer func() {
@@ -69,7 +87,7 @@ func (c *Client) Message(txt string) (lst []string, e error) {
 
 	tr.DisableKeepAlives = true
 
-	req, err := http.NewRequest("GET", "https://api.wit.ai/message?v=20170307&q="+url.QueryEscape(txt), nil)
+	req, err := http.NewRequest("GET", "https://api.wit.ai/message?v=20170307&q="+url.QueryEscape(c.prepareMessage(txt)), nil)
 	if err != nil {
 		return nil, err
 	}
